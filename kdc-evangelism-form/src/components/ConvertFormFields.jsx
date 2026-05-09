@@ -3,16 +3,48 @@ import {
   KDC_VISITED, PHONE_TYPES, GENDERS
 } from '../utils/formConstants'
 
+/**
+ * FieldLabel — shows red * when the field is empty/invalid,
+ * swaps to green ✔ the moment it is satisfied.
+ */
+function FieldLabel({ children, filled }) {
+  return (
+    <label className="label flex items-center gap-1.5">
+      {children}
+      {filled
+        ? <span className="text-emerald-500 text-sm font-bold leading-none">✔</span>
+        : <span className="text-red-500 text-sm font-bold leading-none">*</span>
+      }
+    </label>
+  )
+}
+
 export default function ConvertFormFields({ form, setForm, disabled = false, radioName = 'gender' }) {
   function update(field, value) {
     setForm(f => ({ ...f, [field]: value }))
   }
 
+  // ── Per-field validity checks — mirrors their isFormValid logic exactly
+  const ok = {
+    full_name:         form.full_name.trim().length > 0,
+    gender:            form.gender !== '',
+    phone_number:      form.phone_number.length === 11,
+    date_reached:      form.date_reached !== '',
+    location_address:  form.location_address === '__other__'
+                         ? (form.location_other || '').trim().length > 0
+                         : form.location_address !== '',
+    salvation_status:  form.salvation_status !== '',
+    occupation:        form.occupation !== '',
+    level_of_response: form.level_of_response !== '',
+    visited_kdc:       form.visited_kdc !== '',
+  }
+
   return (
     <div className="space-y-4">
+
       {/* Full Name */}
       <div>
-        <label className="label">Full Name <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.full_name}>Full Name</FieldLabel>
         <input
           type="text"
           placeholder="Enter Name of Convert / Invitee"
@@ -26,7 +58,7 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
 
       {/* Gender */}
       <div>
-        <label className="label">Gender <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.gender}>Gender</FieldLabel>
         <div className="flex gap-4 mt-1">
           {GENDERS.map(g => (
             <label key={g} className="flex items-center gap-2 cursor-pointer select-none">
@@ -48,7 +80,7 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
 
       {/* Phone Number */}
       <div>
-        <label className="label">Phone Number <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.phone_number}>Phone Number</FieldLabel>
         <div className="flex gap-2">
           <input
             type="tel"
@@ -72,14 +104,14 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
             {PHONE_TYPES.map(t => <option key={t}>{t}</option>)}
           </select>
         </div>
-        <p className={`text-xs mt-1 ${form.phone_number.length === 11 ? 'text-emerald-600' : 'text-gray-400'}`}>
+        <p className={`text-xs mt-1 ${ok.phone_number ? 'text-emerald-600' : 'text-gray-400'}`}>
           {form.phone_number.length}/11 digits
         </p>
       </div>
 
       {/* Date Reached */}
       <div>
-        <label className="label">Date Reached <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.date_reached}>Date Reached</FieldLabel>
         <input
           type="date"
           value={form.date_reached}
@@ -90,9 +122,10 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
         />
       </div>
 
-      {/* Location */}
+      {/* Location Address
+          Their system uses '__other__' as the sentinel value for custom locations */}
       <div>
-        <label className="label">Location Address <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.location_address}>Location Address</FieldLabel>
         {form.location_address === '__other__' ? (
           <div className="flex gap-2">
             <input
@@ -136,7 +169,7 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
 
       {/* Salvation Status */}
       <div>
-        <label className="label">Salvation Status <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.salvation_status}>Salvation Status</FieldLabel>
         <select
           value={form.salvation_status}
           onChange={e => update('salvation_status', e.target.value)}
@@ -151,7 +184,7 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
 
       {/* Occupation */}
       <div>
-        <label className="label">Occupation <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.occupation}>Occupation</FieldLabel>
         <select
           value={form.occupation}
           onChange={e => update('occupation', e.target.value)}
@@ -166,7 +199,7 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
 
       {/* Level of Response */}
       <div>
-        <label className="label">Level of Response <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.level_of_response}>Level of Response</FieldLabel>
         <select
           value={form.level_of_response}
           onChange={e => update('level_of_response', e.target.value)}
@@ -181,7 +214,7 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
 
       {/* Visited KDC */}
       <div>
-        <label className="label">Visited KDC Before? <span className="text-red-500">*</span></label>
+        <FieldLabel filled={ok.visited_kdc}>Visited KDC Before?</FieldLabel>
         <select
           value={form.visited_kdc}
           onChange={e => update('visited_kdc', e.target.value)}
@@ -194,9 +227,11 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
         </select>
       </div>
 
-      {/* Remark */}
+      {/* Remark — optional, no indicator */}
       <div>
-        <label className="label">Remark <span className="text-gray-400 text-xs font-normal">(Optional)</span></label>
+        <label className="label">
+          Remark <span className="text-gray-400 text-xs font-normal">(Optional)</span>
+        </label>
         <textarea
           placeholder="Enter brief remark…"
           value={form.remark}
@@ -206,6 +241,7 @@ export default function ConvertFormFields({ form, setForm, disabled = false, rad
           disabled={disabled}
         />
       </div>
+
     </div>
   )
 }
